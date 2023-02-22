@@ -39,6 +39,7 @@ func New(s S3Basics, cfg aws.Config) *BucketBasics {
 }
 
 // ListBuckets lists the buckets in the current account.
+// ListBuckets перечисляет сегменты в текущей учетной записи.
 func (b *BucketBasics) ListBuckets() ([]types.Bucket, error) {
 	result, err := b.S3Client.ListBuckets(context.TODO(), &s3.ListBucketsInput{})
 	var buckets []types.Bucket
@@ -51,7 +52,7 @@ func (b *BucketBasics) ListBuckets() ([]types.Bucket, error) {
 }
 
 // BucketExists checks whether a bucket exists in the current account.
-// BucketExists проверяет, существует ли сегмент в текущей учетной записи.
+// BucketExists проверяет, существует ли сегмент(корзина) в текущей учетной записи.
 func (b *BucketBasics) BucketExists(bucketName string) (bool, error) {
 	_, err := b.S3Client.HeadBucket(context.TODO(), &s3.HeadBucketInput{
 		Bucket: aws.String(bucketName),
@@ -93,8 +94,14 @@ func (b BucketBasics) CreateBucket(name string, region string) error {
 	return err
 }
 
-// UploadFile reads from a file and puts the data into an object in a bucket.
-func (b *BucketBasics) UploadFile(bucketName string, objectKey string, fileName string) error {
+// UploadUpdateFile reads from a file and puts the data into an object in a bucket.
+// UploadUpdateFile читает из файла и помещает данные в объект в ведре.
+// objectKey - любое имя файла, которое будет создано в корзине
+// по сути новое имя файла при копировании в корзину,
+// можно одинаковое имя для objectName и fileName
+// если ключа такого нет в корзине, то будет создан новый файл по имени objectKey
+// если ключ такое есть, то файл будет обновлен
+func (b *BucketBasics) UploadUpdateFile(bucketName string, objectKey string, fileName string) error {
 	file, err := os.Open(fileName)
 	if err != nil {
 		log.Printf("Couldn't open file %v to upload. Here's why: %v\n", fileName, err)
@@ -240,18 +247,15 @@ func (b BucketBasics) DeleteBucket(bucketName string) error {
 	return err
 }
 
-func (b *BucketBasics) GetListFirstPage() {
+func (b *BucketBasics) GetListFirstPage(bucketName string) (*s3.ListObjectsV2Output, error) {
+	os.LookupEnv("AWS")
 	// Get the first page of results for ListObjectsV2 for a bucket
 	// Получить первую страницу результатов для ListObjectsV2 для корзины
 	output, err := b.S3Client.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
-		Bucket: aws.String("paltos"),
+		Bucket: aws.String(bucketName),
 	})
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
-	log.Println("first page results:")
-	for _, object := range output.Contents {
-		log.Printf("key=%s size=%d", aws.ToString(object.Key), object.Size)
-	}
-
+	return output, err
 }

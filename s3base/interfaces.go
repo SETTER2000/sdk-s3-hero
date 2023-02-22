@@ -6,7 +6,7 @@ type S3Basics interface {
 	ListBuckets() ([]types.Bucket, error)
 	BucketExists(bucketName string) (bool, error)
 	CreateBucket(name string, region string) error
-	UploadFile(bucketName string, objectKey string, fileName string) error
+	UploadUpdateFile(bucketName string, objectKey string, fileName string) error
 	UploadLargeObject(bucketName string, objectKey string, largeObject []byte) error
 	DownloadFile(bucketName string, objectKey string, fileName string) error
 	DownloadLargeObject(bucketName string, objectKey string) ([]byte, error)
